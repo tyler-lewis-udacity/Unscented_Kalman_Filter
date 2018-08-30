@@ -1,0 +1,9 @@
+# silly macOS
+.DS_Store
+
+# build files
+build/
+
+# Term 2 Simulator
+term2_sim_linux
+
