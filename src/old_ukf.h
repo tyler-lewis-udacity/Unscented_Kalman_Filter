@@ -67,13 +67,10 @@ public:
   ///* Sigma point spreading parameter
   double lambda_;
 
-  ///* Q matrix
-  MatrixXd Q_;
-
-  ///* radar normalized innovation squared
+  ///* the current NIS for radar
   double NIS_radar_;
 
-  ///* radar normalized innovation squared
+  ///* the current NIS for laser
   double NIS_laser_;
 
   /**
