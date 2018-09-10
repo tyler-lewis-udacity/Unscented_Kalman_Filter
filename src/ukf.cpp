@@ -10,7 +10,7 @@ using std::vector;
 
 UKF::UKF() {
   // if this is false, laser measurements will be ignored (except during init)
-  use_laser_ = true;
+  use_laser_ = true; 
 
   // if this is false, radar measurements will be ignored (except during init)
   use_radar_ = true;
@@ -73,7 +73,6 @@ UKF::UKF() {
   Q_ = MatrixXd(2,2);
   Q_ << std_a_*std_a_, 0,
        0, std_yawdd_*std_yawdd_;
-
 }
 
 UKF::~UKF() {}
@@ -82,7 +81,7 @@ UKF::~UKF() {}
  * either radar or laser.
  */
 void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
-
+ 
   // initialization
   if (!is_initialized_){
 
@@ -94,9 +93,9 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
           0,0,0,0,1;
 
     // get sensor data from RADAR
-    if (meas_package.sensor_type_ == MeasurementPackage::RADAR){
-      double rho    = meas_package.raw_measurements_[0];
-      double phi    = meas_package.raw_measurements_[1];
+    if (meas_package.sensor_type_ == MeasurementPackage::RADAR && use_radar_){
+      double rho     = meas_package.raw_measurements_[0];
+      double phi     = meas_package.raw_measurements_[1];
       double rho_dot = meas_package.raw_measurements_[2];
 
       // polar to cartesian
@@ -108,12 +107,17 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 
       // initialize the state vector
       x_ << px, py, v, psi, psi_dot;
+
+      // done initializing
+      is_initialized_ = true;
+      time_us_ = meas_package.timestamp_;
+      return;
     }
 
     // get sensor data from LASER
-    else if (meas_package.sensor_type_ == MeasurementPackage::LASER){
-      double px     = meas_package.raw_measurements_[0];
-      double py     = meas_package.raw_measurements_[1];
+    else if (meas_package.sensor_type_ == MeasurementPackage::LASER && use_laser_){
+      double px = meas_package.raw_measurements_[0];
+      double py = meas_package.raw_measurements_[1];
 
       // polar to cartesian
       double v       = 0;
@@ -122,12 +126,14 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 
       // initialize the state vector
       x_ << px, py, v, psi, psi_dot;
-      
-    // done initializing
-    is_initialized_ = true;
-    time_us_ = meas_package.timestamp_;
-    return;
+
+      // done initializing
+      is_initialized_ = true;
+      time_us_ = meas_package.timestamp_;
+      return;
     }
+
+    // used to be here...
   }
 
   // update delta_t and store the old time value as time_us_
@@ -141,7 +147,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
   if (meas_package.sensor_type_ == MeasurementPackage::RADAR) {
     UpdateRadar(meas_package);
   } 
-  else {
+  else if (meas_package.sensor_type_ == MeasurementPackage::LASER) {
     UpdateLidar(meas_package);
   }
 }
@@ -150,21 +156,11 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Predicts sigma points, the state, and the state covariance matrix.
+ * @param {double} delta_t the change in time (in seconds) between the last
+ * measurement and this one.
+ */
 void UKF::Prediction(double delta_t){ 
   
   //create sigma point matrix
@@ -289,25 +285,6 @@ void UKF::Prediction(double delta_t){
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /**
  * Updates the state and the state covariance matrix using a laser measurement.
  * @param {MeasurementPackage} meas_package
@@ -346,11 +323,6 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
   for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //2n+1 simga points
     //residual
     VectorXd z_diff = Zsig.col(i) - z_pred;
-
-    // //angle normalization
-    // while (z_diff(1)> M_PI) z_diff(1)-=2.*M_PI;
-    // while (z_diff(1)<-M_PI) z_diff(1)+=2.*M_PI;
-
     S = S + weights_(i) * z_diff * z_diff.transpose();
   }
 
@@ -369,15 +341,9 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
 
     //residual
     VectorXd z_diff = Zsig.col(i) - z_pred;
-    // //angle normalization
-    // while (z_diff(1)> M_PI) z_diff(1)-=2.*M_PI;
-    // while (z_diff(1)<-M_PI) z_diff(1)+=2.*M_PI;
-
+    
     // state difference
     VectorXd x_diff = Xsig_pred_.col(i) - x_;
-    // //angle normalization
-    // while (x_diff(3)> M_PI) x_diff(3)-=2.*M_PI;
-    // while (x_diff(3)<-M_PI) x_diff(3)+=2.*M_PI;
 
     Tc = Tc + weights_(i) * x_diff * z_diff.transpose();
   }
@@ -402,30 +368,6 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
   //calculate NIS
   NIS_laser_ = z_diff.transpose() * S.inverse() * z_diff;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
