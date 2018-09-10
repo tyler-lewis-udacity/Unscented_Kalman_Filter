@@ -357,10 +357,6 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
   //residual
   VectorXd z_diff = z - z_pred;
 
-  // //angle normalization
-  // while (z_diff(1)> M_PI) z_diff(1)-=2.*M_PI;
-  // while (z_diff(1)<-M_PI) z_diff(1)+=2.*M_PI;
-
   //update state mean and covariance matrix
   x_ = x_ + K * z_diff;
   P_ = P_ - K*S*K.transpose();
